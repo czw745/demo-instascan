@@ -1,4 +1,6 @@
-$(function () {
+invoiceScan()
+
+function invoiceScan() {
   var seq = '7'
   let opts = {
     continuous: true,
@@ -20,14 +22,23 @@ $(function () {
     var randomNumber = content_new.substr(17, 4) //隨機碼
     var invTerm_1 = content_new.substr(10, 3) //民國年
     var invTerm_2 = content_new.substr(13, 2) //民國月
+    var invTerm_mon = content_new.substr(13, 2) //民國月
     var invTerm_3 = content_new.substr(15, 2) //民國日
 
-    alert(
-      '發票號碼：' +
+    if (invTerm_1 !== '111') {
+      Swal.fire({
+        title: 'Error!',
+        text: '您的發票不符合資格活動期間內的指定之發票',
+        icon: 'error',
+        confirmButtonText: 'rescan',
+      })
+    } else {
+      let html =
+        '發票號碼：' +
         invNum_1 +
         '-' +
         invNum_2 +
-        '\n隨機碼：' +
+        '\t隨機碼：' +
         randomNumber +
         '\n發票時間：' +
         invTerm_1 +
@@ -36,13 +47,38 @@ $(function () {
         '月' +
         invTerm_3 +
         '日'
-    )
 
-    // if(invTerm_1 != '111'){
-    //   alert("您的發票不符合資格必須為【2022今夏買Coke®，超值好禮抽不完！】活動期間內的指定之發票");
-    // }else{
-    //     location.href = 'https://coca-cola.coolbe.com.tw' + '/Invoice/input_number' + '?seq=' + seq + '&invNum_1=' + invNum_1 + '&invNum_2=' + invNum_2 + '&randomNumber=' + randomNumber + '&invTerm_1=' + invTerm_1 + '&invTerm_2=' + invTerm_2;
-    // }
+      if (invTerm_2 % 1 === 0) {
+        invTerm_2 = +invTerm_2 + 1
+        if (invTerm_2 < 10) {
+          invTerm_2 = '0' + invTerm_2
+        }
+      }
+
+      Swal.fire({
+        title: 'Invoice Info',
+        html: html,
+        icon: 'info',
+        confirmButtonText: 'submit',
+      }).then(() => {
+        $.ajax('/api/invApp.php', {
+          data: {
+            invNum: invNum_1 + invNum_2,
+            randomNumber: randomNumber,
+            invDate: +invTerm_1 + 1911 + '/' + invTerm_mon + '/' + invTerm_3,
+            invTerm: invTerm_1 + invTerm_2,
+          },
+          success: (res) => {
+            console.log(JSON.stringify(res))
+            // console.log(res)
+            // location.href = '/index.php'
+          },
+          error: (err) => {
+            console.log(err)
+          },
+        })
+      })
+    }
   })
   //開始偵聽掃描事件，若有偵聽到印出內容。
   Instascan.Camera.getCameras()
@@ -66,4 +102,4 @@ $(function () {
     .catch(function (e) {
       alert('本裝置並沒有攝像頭相關功能！')
     })
-})
+}
